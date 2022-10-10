@@ -1,4 +1,4 @@
-module github.com/chrisbodhi/tbd
+module github.com/chrisbodhi/sheetshell
 
 go 1.19
 
