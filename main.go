@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -22,7 +23,8 @@ func main() {
 	}
 	var keys []string
 	var vals []string
-	// TODO: alpabetize
+	sort.Strings(envVarPairs)
+
 	for _, pair := range envVarPairs {
 		kv := strings.SplitN(pair, "=", 2)
 		k := kv[0]
