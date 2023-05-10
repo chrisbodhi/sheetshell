@@ -2,15 +2,17 @@ module github.com/chrisbodhi/sheetshell
 
 go 1.19
 
-require golang.design/x/clipboard v0.6.2
+require (
+	github.com/charmbracelet/bubbles v0.15.0
+	github.com/charmbracelet/bubbletea v0.24.0
+	github.com/charmbracelet/lipgloss v0.7.1
+	golang.design/x/clipboard v0.6.2
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/bubbles v0.15.0 // indirect
-	github.com/charmbracelet/bubbletea v0.24.0 // indirect
-	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
-	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect

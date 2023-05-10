@@ -1,4 +1,3 @@
-// Demo code for the Table primitive.
 package main
 
 import (
@@ -12,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.design/x/clipboard"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var baseStyle = lipgloss.NewStyle().
@@ -50,6 +50,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ba := []byte(val)
 			clipboard.Write(clipboard.FmtText, ba)
 
+			// TODO: flash this on the bottom, as opposed to
+			//       prepending the current view; as is, this
+			//       isn't working in fullscreen.
 			return m, tea.Batch(
 				tea.Printf("Copied %s to clipboard", val),
 			)
@@ -65,6 +68,11 @@ func (m model) View() string {
 }
 
 func main() {
+	_, height, err := terminal.GetSize(0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	fromEnv := os.Environ()
 	sort.Strings(fromEnv)
 	rows := []table.Row{}
@@ -84,7 +92,7 @@ func main() {
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(true),
-		table.WithHeight(7),
+		table.WithHeight(height-10),
 	)
 
 	s := table.DefaultStyles()
@@ -101,7 +109,7 @@ func main() {
 
 	m := model{t}
 
-	p := tea.NewProgram(m)
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("error: %v", err)
 		os.Exit(1)
