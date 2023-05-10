@@ -3,74 +3,85 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
+	tea "github.com/charmbracelet/bubbletea"
 	"golang.design/x/clipboard"
 )
 
-func main() {
-	app := tview.NewApplication()
-	table := tview.NewTable().
-		SetBorders(true)
-	envVarPairs := os.Environ()
+type model struct {
+	pairs  [][]string
+	cursor int
+}
+
+func initialModel() model {
+	fromEnv := os.Environ()
+	sort.Strings(fromEnv)
+	pairs := [][]string{}
+	for _, pair := range fromEnv {
+		pairs = append(pairs, strings.SplitN(pair, "=", 2))
+	}
+	return model{
+		pairs: pairs,
+	}
+}
+
+func (m model) Init() tea.Cmd {
+	return nil
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	err := clipboard.Init()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
-	var keys []string
-	var vals []string
-	sort.Strings(envVarPairs)
 
-	for _, pair := range envVarPairs {
-		kv := strings.SplitN(pair, "=", 2)
-		k := kv[0]
-		v := kv[1]
-		keys = append(keys, k)
-		vals = append(vals, v)
-	}
-	assert(len(keys), len(vals))
-	rows := len(keys)
-	for r := 0; r < rows; r++ {
-		table.SetCell(r, 0,
-			tview.NewTableCell(keys[r]).
-				SetTextColor(tcell.ColorYellow).
-				SetAlign(tview.AlignCenter))
-		table.SetCell(r, 1,
-			tview.NewTableCell(vals[r]).
-				SetTextColor(tcell.ColorWhite).
-				SetAlign(tview.AlignCenter)) // TODO: what to do with long boys?
-	}
-	// TODO: use a better fixed header, or just remove it
-	table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEscape {
-			app.Stop()
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(m.pairs)-1 {
+				m.cursor++
+			}
+		case "enter", " ":
+			ba := []byte(m.pairs[m.cursor][1])
+			clipboard.Write(clipboard.FmtText, ba)
 		}
-		if key == tcell.KeyEnter {
-			table.SetSelectable(true, true)
-		}
-	}).SetSelectedFunc(func(row int, column int) {
-		cell := table.GetCell(row, column).SetTextColor(tcell.ColorRed)
-		clipboard.Write(clipboard.FmtText, []byte(cell.Text))
-		table.SetSelectable(false, false)
-	})
-	if err := app.SetRoot(table, true).EnableMouse(true).Run(); err != nil {
-		panic(err)
 	}
+
+	return m, nil
 }
 
-func assert(i1, i2 int) {
-	if i1 != i2 {
-		panic(fmt.Sprintf("assertion failed, encountered mismatch of size %d", abs(i1-i2)))
+func (m model) View() string {
+	s := "Your local env vars\n"
+
+	for i, pair := range m.pairs {
+		cursor := " "
+		if m.cursor == i {
+			cursor = ">"
+		}
+
+		s += fmt.Sprintf("%s %s %s\n", cursor, pair[0], pair[1])
 	}
+
+	s += "\nPress q to quit.\n"
+
+	return s
 }
 
-func abs(n int) int {
-	if n >= 0 {
-		return n
+func main() {
+	p := tea.NewProgram(initialModel())
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("error: %v", err)
+		os.Exit(1)
 	}
-	return -n
 }
